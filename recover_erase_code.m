@@ -1,9 +1,9 @@
 % Recover set of point from erased code
 %% 1. Generate random points
-silent = false; % do not draw pictures
+silent = true; % do not draw pictures
 if silent
     Scale = 20000000; % generate coords in range [-Scale;Scale]
-    N = 15; % number of points
+    N = 16; % number of points
     seed = 48; rng(seed); % fix RNG seed for repeatability 
     %XY_orig = randi(Scale*2+1, [N,2]) - Scale - 1; % generate Nx2 array
     XY_orig = rand([N,2]);
@@ -41,9 +41,9 @@ for way = 1:2
     Sset = sort(Sset);
     if isempty(Sset), continue; end
     if all(near(sort(Sorig ) , Sset*min(Sorig)))
-        fprintf('Recovered original S\n');
+        fprintf('Recovering original S\n');
     else
-        fprintf('Rcovered ghost S\n');
+        fprintf('Recovering ghost S\n');
     end
     %% 4. Find all respective triples (allign at central triangle)
     % each triple is (i1,i2,i3) - indices in Sset;
@@ -181,7 +181,7 @@ end
 Sdebug = sortrows(Sdebug);
 %disp(Sdebug);
 for i = 1:size(Sdebug,1)
-    fprintf('%d) %d %d %d %g\n', i,  Sdebug(i,2:end),Sdebug(i));
+    %fprintf('%d) %d %d %d %g\n', i,  Sdebug(i,2:end),Sdebug(i));
 end
 n_code = nchoosek(n_triangles, 2)*2;
 pairs =  nchoosek(1:n_triangles, 2);
@@ -208,16 +208,46 @@ function Sset = find_set_areas(CodeE, way, n)
 % n - number of points, to check only!!
 CodeE=sort(CodeE);
 Smax = CodeE(end);
+M=length(CodeE);
+CodeE_rev = Smax ./ CodeE(M:-1:1);
+% must be sorted too
+assert(all(CodeE_rev(1:end-1) < CodeE_rev(2:end)));
 %assert(CodeEnorm(1)==1);
 
 % find pairs
-pairs=[];
-for i = 1:length(CodeE)-1
-    for j = i+1:length(CodeE)
-        if near(CodeE(i)*CodeE(j), Smax)
-            pairs = [pairs; i j];
+i=1;j=1;
+pairs0=[];
+while i <= M && j <= M
+    if near(CodeE(i), CodeE_rev(j))
+        if near(CodeE(i)*CodeE(M+1-j), Smax)
+            pairs0 = [pairs0; sort([i, M+1-j])];
+        end
+        i=i+1;j=j+1;
+    else
+        if CodeE(i) < CodeE_rev(j)
+            i=i+1;
+        else
+            j=j+1;
         end
     end
+end
+pairs0=unique(pairs0, 'rows');
+
+compare_with_old = n <= 7;
+if compare_with_old 
+    pairs=[];
+    for i = 1:M-1
+        for j = i+1:M
+            if near(CodeE(i)*CodeE(j), Smax)
+                pairs = [pairs; i j];
+            end
+        end
+    end
+    P1 = sortrows(pairs0);
+    P2 = sortrows(pairs);
+    assert(all(P1(:)==P2(:)));
+else
+    pairs = pairs0;
 end
 assert(size(pairs, 1) == nchoosek(n,3)-2); % - 2, because Smin,Smax excluded
 % then test for Sbase - either CodeEnorm(i) or CodeEnorm(j)
