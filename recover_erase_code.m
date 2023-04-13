@@ -3,8 +3,8 @@
 silent = true; % do not draw pictures
 if silent
     Scale = 20000000; % generate coords in range [-Scale;Scale]
-    N = 16; % number of points
-    seed = 48; rng(seed); % fix RNG seed for repeatability 
+    N = 19; % number of points
+    seed = 51; rng(seed); % fix RNG seed for repeatability 
     %XY_orig = randi(Scale*2+1, [N,2]) - Scale - 1; % generate Nx2 array
     XY_orig = rand([N,2]);
 else
@@ -119,7 +119,7 @@ for way = 1:2
     CErec = sort(CErec);CodeE = sort(CodeE);
     assert(all(near(Srec / min(Srec) , Sset/min(Sset) )));
     fprintf('Areas match original ones!\n');
-    assert(all(near(CErec, CodeE)));
+    assert(all(near(CErec, CodeE, 1.0e-6)));
     fprintf('Erased code matches the original one!\n')
     %% try to align 
     pos_orig = [4,3,1];% Map restored point to the respective original points
